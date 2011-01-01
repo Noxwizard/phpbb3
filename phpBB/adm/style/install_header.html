@@ -16,9 +16,12 @@
 
 /**
 * Set display of page element
+* n	- The node's ID
 * s[-1,0,1] = hide,toggle display,show
+* type - The style type (none, block, etc...)
+* parents - How many parents to traverse
 */
-function dE(n, s, type)
+function dE(n, s, type, parents)
 {
 	if (!type)
 	{
@@ -26,11 +29,70 @@ function dE(n, s, type)
 	}
 
 	var e = document.getElementById(n);
+	parents = parseInt(parents);
+	if(parents > 0)
+	{
+		for(i = 0; i < parents; i++)
+		{
+			if(e.parentNode != null)
+			{
+				e = e.parentNode;
+			}
+		}
+	}
+
 	if (!s)
 	{
 		s = (e.style.display == '' || e.style.display == 'block') ? -1 : 1;
 	}
 	e.style.display = (s == 1) ? type : 'none';
+}
+
+/**
+* Shows only the relevant fields for each DBMS
+*/
+function set_dbms_fields(db)
+{
+	function set(port, name, user, pass)
+	{
+		dE('dbport', port, false, 2);
+		dE('dbname', name, false, 2);
+		dE('dbuser', user, false, 2);
+		dE('dbpasswd', pass, false, 2);
+	}
+
+	switch(db)
+	{
+		case 'mssql_odbc':
+			set(1, -1, 1, 1);
+		break;
+
+		case 'sqlite':
+			set(-1, -1, -1, -1);
+		break;
+		
+		case 'firebird':
+		case 'mssql':
+		case 'mysql':
+		case 'mysqli':
+		case 'oracle':
+		case 'postgres':
+			set(1, 1, 1, 1);
+		break;
+	}
+}
+
+window.onload = function ()
+{
+	var e = document.getElementById('dbms');
+	if(e != null)
+	{
+		if(e.length > 0)
+		{
+			set_dbms_fields(e.options[0].value);
+			e.onchange = function () { set_dbms_fields(this.options[this.selectedIndex].value); }
+		}
+	}
 }
 
 // ]]>
