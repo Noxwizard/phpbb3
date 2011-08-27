@@ -1565,7 +1565,17 @@ class phpbb_db_tools
 
 			case 'oracle':
 				$sql .= " {$column_type} ";
-				$sql .= (!is_null($column_data[1])) ? "DEFAULT '{$column_data[1]}' " : '';
+
+				if(!is_null($column_data[1]))
+				{
+					$default = "'{$column_data[1]}'";
+					if (preg_match('/raw/i', $column_type))
+					{
+						$default = "rawtohex('{$column_data[1]}')";
+					}
+
+					$sql .= "DEFAULT $default ";
+				}
 
 				// In Oracle empty strings ('') are treated as NULL.
 				// Therefore in oracle we allow NULL's for all DEFAULT '' entries
