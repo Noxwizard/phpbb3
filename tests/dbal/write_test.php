@@ -45,9 +45,14 @@ class phpbb_dbal_write_test extends phpbb_database_test_case
 		$sql = "SELECT *
 			FROM phpbb_config
 			WHERE config_name = '" . $sql_ary['config_name'] . "'";
-		$result = $db->sql_query_limit($sql, 1);
+		$row = $db->sql_fetchrow($result);
 
-		$this->assertEquals($sql_ary, $db->sql_fetchrow($result));
+		//Oracle hack
+		if(isset($row['xrownum']))
+		{
+			unset($row['xrownum']);
+		}
+		$this->assertEquals($sql_ary, $row);
 
 		$db->sql_freeresult($result);
 	}
