@@ -449,7 +449,8 @@ class dbal_oracle extends dbal
 	{
 		$this->query_result = false;
 
-		$query = 'SELECT * FROM (SELECT /*+ FIRST_ROWS */ rownum AS xrownum, a.* FROM (' . $query . ') a WHERE rownum <= ' . ($offset + $total) . ') WHERE xrownum >= ' . $offset;
+		$sql_total = ($total != 0) ? 'WHERE rownum <= ' . ($offset + $total) : '';
+		$query = 'SELECT * FROM (SELECT /*+ FIRST_ROWS */ rownum AS xrownum, a.* FROM (' . $query . ') a ' . $sql_total . ') WHERE xrownum >= ' . ($offset+1);
 
 		return $this->sql_query($query, $cache_ttl);
 	}
