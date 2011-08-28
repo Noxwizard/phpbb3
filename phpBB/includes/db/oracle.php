@@ -233,6 +233,8 @@ class dbal_oracle extends dbal
 	*/
 	function sql_query($query = '', $cache_ttl = 0)
 	{
+		$this->is_limit_query = false;
+
 		if ($query != '')
 		{
 			global $cache;
@@ -453,7 +455,10 @@ class dbal_oracle extends dbal
 		$sql_total = ($total != 0) ? 'WHERE rownum <= ' . ($offset + $total) : '';
 		$query = 'SELECT * FROM (SELECT /*+ FIRST_ROWS */ rownum AS xrownum, a.* FROM (' . $query . ') a ' . $sql_total . ') WHERE xrownum >= ' . ($offset+1);
 
-		return $this->sql_query($query, $cache_ttl);
+		$result = $this->sql_query($query, $cache_ttl);
+		$this->is_limit_query = true;
+
+		return $result;
 	}
 
 	/**
