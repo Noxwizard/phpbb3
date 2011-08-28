@@ -25,6 +25,7 @@ include_once($phpbb_root_path . 'includes/db/dbal.' . $phpEx);
 class dbal_oracle extends dbal
 {
 	var $last_query_text = '';
+	var $is_limit_query = false;
 
 	/**
 	* Connect to server
@@ -488,6 +489,11 @@ class dbal_oracle extends dbal
 			if (!$result || !$row)
 			{
 				return false;
+			}
+
+			if($this->is_limit_query && isset($row['XROWNUM']))
+			{
+				unset($row['XROWNUM']);
 			}
 
 			$result_row = array();
