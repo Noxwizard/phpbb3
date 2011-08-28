@@ -159,12 +159,6 @@ class phpbb_dbal_select_test extends phpbb_database_test_case
 		$ary = array();
 		while ($row = $db->sql_fetchrow($result))
 		{
-			//Oracle hack
-			if(isset($row['xrownum']))
-			{
-				unset($row['xrownum']);
-			}
-
 			$ary[] = $row;
 		}
 		$db->sql_freeresult($result);
