@@ -272,5 +272,6 @@ class phpbb_dbal_db_tools_test extends phpbb_database_test_case
 		);
 
 		$this->tools->sql_table_drop('prefix_test_table');
+		$this->assertFalse($this->tools->sql_table_exists('prefix_test_table'));
 	}
 }
