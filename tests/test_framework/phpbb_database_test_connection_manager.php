@@ -86,8 +86,7 @@ class phpbb_database_test_connection_manager
 			throw new Exception("Unable do connect to $cleaned_dsn using PDO with error: {$e->getMessage()}");
 		}
 
-		// good for debug
-		// $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		$this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	}
 
 	/**
@@ -120,10 +119,12 @@ class phpbb_database_test_connection_manager
 
 			default:
 				$this->connect(false);
+				$database_dropped = false;
 
 				try
 				{
 					$this->pdo->exec('DROP DATABASE ' . $this->config['dbname']);
+					$database_dropped = true;
 				}
 				catch (PDOException $e)
 				{
@@ -132,9 +133,20 @@ class phpbb_database_test_connection_manager
 					{
 						$this->pdo->exec('DROP TABLE ' . $table);
 					}
+					$this->purge_extras();
 				}
-
-				$this->pdo->exec('CREATE DATABASE ' . $this->config['dbname']);
+				
+				if($database_dropped)
+				{
+					try
+					{
+						$this->pdo->exec('CREATE DATABASE ' . $this->config['dbname']);
+					}
+					catch (PDOException $e)
+					{
+						throw new Exception("Unable to re-create database: {$e->getMessage()}");
+					}
+				}
 			 break;
 		}
 	}
@@ -398,6 +410,34 @@ class phpbb_database_test_connection_manager
 			$message = "Supplied dbms \"$dbms\" is not a valid phpBB dbms, must be one of: ";
 			$message .= implode(', ', array_keys($available_dbms));
 			throw new Exception($message);
+		}
+	}
+
+	/**
+	* Removes extra objects from a database. This is for cases where dropping the database fails.
+	*/
+	public function purge_extras()
+	{
+		$this->ensure_connected(__METHOD__);
+		$queries = array();
+
+		switch ($this->config['dbms'])
+		{
+			case 'oracle':
+				$sql = 'SELECT sequence_name
+					FROM USER_SEQUENCES';
+				$result = $this->pdo->query($sql);
+
+				while ($row = $result->fetch(PDO::FETCH_NUM))
+				{
+					$queries[] = 'DROP SEQUENCE ' . current($row);
+				}
+			break;
+		}
+
+		foreach($queries as $query)
+		{
+			$this->pdo->exec($query);
 		}
 	}
 }
