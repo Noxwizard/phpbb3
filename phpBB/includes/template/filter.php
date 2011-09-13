@@ -310,9 +310,10 @@ class phpbb_template_filter extends php_user_filter
 	* Compile variables
 	*
 	* @param string $text_blocks Variable reference in source template
+	* @param bool $raw If true, return the name of the variable
 	* @return string compiled template code
 	*/
-	private function compile_var_tags(&$text_blocks)
+	private function compile_var_tags(&$text_blocks, $raw = false)
 	{
 		// change template varrefs into PHP varrefs
 		$varrefs = array();
@@ -324,17 +325,23 @@ class phpbb_template_filter extends php_user_filter
 		{
 			$namespace = $var_val[1];
 			$varname = $var_val[3];
-			$new = $this->generate_block_varref($namespace, $varname, true, $var_val[2]);
+			$new = $this->generate_block_varref($namespace, $varname, true, $var_val[2], $raw);
 
 			$text_blocks = str_replace($var_val[0], $new, $text_blocks);
 		}
 
 		// Handle special language tags L_ and LA_
-		$this->compile_language_tags($text_blocks);
+		$this->compile_language_tags($text_blocks, $raw);
 
 		// This will handle the remaining root-level varrefs
-		$text_blocks = preg_replace('#\{(' . self::REGEX_VAR . ')\}#', "<?php echo (isset(\$_rootref['\\1'])) ? \$_rootref['\\1'] : ''; /**/?>", $text_blocks);
-		$text_blocks = preg_replace('#\{\$(' . self::REGEX_VAR . ')\}#', "<?php echo (isset(\$_tpldata['DEFINE']['.']['\\1'])) ? \$_tpldata['DEFINE']['.']['\\1'] : ''; /**/?>", $text_blocks);
+		$count_root_var = $count_root_def = 0;
+		$text_blocks = preg_replace('#\{(' . self::REGEX_VAR . ')\}#', "\$_rootref['\\1']", $text_blocks, -1, $count_root_var);
+		$text_blocks = preg_replace('#\{\$(' . self::REGEX_VAR . ')\}#', "\$_tpldata['DEFINE']['.']['\\1']", $text_blocks, -1, $count_root_def);
+		
+		if(!$raw && ($count_root_var || $count_root_def))
+		{
+			$text_blocks = "<?php echo (isset($text_blocks)) ? $text_blocks : ''; /**/?>";
+		}
 
 		return $text_blocks;
 	}
@@ -725,6 +732,13 @@ class phpbb_template_filter extends php_user_filter
 	*/
 	private function compile_tag_include($tag_args)
 	{
+		// Process dynamic includes
+		if ($tag_args[0] == '{')
+		{
+			$var = $this->compile_var_tags($tag_args, true);
+			return "if (isset($var)) { \$_template->_tpl_include($var); }";
+		}
+
 		return "\$_template->_tpl_include('$tag_args');";
 	}
 
@@ -824,9 +838,10 @@ class phpbb_template_filter extends php_user_filter
 	* @param string $varname Variable name to use
 	* @param bool $echo If true return an echo statement, otherwise a reference to the internal variable
 	* @param bool $defop If true this is a variable created with the DEFINE construct, otherwise template variable
+	* @param bool $raw If true only the name of the variable will be returned
 	* @return string Code to access variable or echo it if $echo is true
 	*/
-	private function generate_block_varref($namespace, $varname, $echo = true, $defop = false)
+	private function generate_block_varref($namespace, $varname, $echo = true, $defop = false, $raw = false)
 	{
 		// Strip the trailing period.
 		$namespace = substr($namespace, 0, -1);
@@ -872,7 +887,11 @@ class phpbb_template_filter extends php_user_filter
 			break;
 		}
 		// @todo Test the !$expr more
-		$varref = ($echo) ? '<?php echo ' . ($isset ? "isset($varref) ? $varref : ''" : $varref) . '; /**/?>' : (($expr || isset($varref)) ? $varref : '');
+
+		if(!$raw)
+		{
+			$varref = ($echo) ? '<?php echo ' . ($isset ? "isset($varref) ? $varref : ''" : $varref) . '; /**/?>' : (($expr || isset($varref)) ? $varref : '');
+		}
 
 		return $varref;
 	}
