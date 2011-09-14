@@ -736,6 +736,7 @@ class phpbb_template_filter extends php_user_filter
 	private function compile_tag_include($tag_args)
 	{
 		// Process dynamic includes
+		// The following will not be resolved: {L_VAR}, {LA_VAR}, {VAR}text
 		if ($tag_args[0] == '{')
 		{
 			$var = $this->compile_var_tags($tag_args, true);
