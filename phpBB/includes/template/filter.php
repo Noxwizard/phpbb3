@@ -310,7 +310,7 @@ class phpbb_template_filter extends php_user_filter
 	* Compile variables
 	*
 	* @param string $text_blocks Variable reference in source template
-	* @param bool $raw If true, return the name of the variable
+	* @param bool $raw If true returns the name of the variable
 	* @return string compiled template code
 	*/
 	private function compile_var_tags(&$text_blocks, $raw = false)
@@ -330,8 +330,11 @@ class phpbb_template_filter extends php_user_filter
 			$text_blocks = str_replace($var_val[0], $new, $text_blocks);
 		}
 
-		// Handle special language tags L_ and LA_
-		$this->compile_language_tags($text_blocks, $raw);
+		// Handle special language tags L_ and LA_, unless the raw variable name was requested
+		if(!$raw)
+		{
+			$this->compile_language_tags($text_blocks);
+		}
 
 		// This will handle the remaining root-level varrefs
 		$count_root_var = $count_root_def = 0;
