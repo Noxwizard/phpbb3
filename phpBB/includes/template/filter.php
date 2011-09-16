@@ -353,7 +353,7 @@ class phpbb_template_filter extends php_user_filter
 		$text_blocks = $this->get_varref($text_blocks, $is_expr);
 		$lang_replaced = $this->compile_language_tags($text_blocks);
 
-		if(!$lang_replaced && $text_blocks[0] != '{')
+		if(!$lang_replaced)
 		{
 			$text_blocks = '<?php echo ' . ($is_expr ? "$text_blocks" : "(isset($text_blocks)) ? $text_blocks : ''") . '; /**/?>';
 		}
